@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8K Image Renderer</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            overflow: hidden;
+        }
+        .image-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: auto;
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        img {
+            max-width: 100%;
+            max-height: 100%;
+            height: auto;
+            width: auto;
+            object-fit: contain;
+            transform-origin: center;
+            transition: transform 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <audio id="bgMusic" autoplay loop>
+        <source src="439_Goodhaven.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const audio = document.getElementById("bgMusic");
+    
+            // Attempt to play the audio
+            audio.play().catch(() => {
+                console.log("Autoplay blocked, waiting for user interaction.");
+                // If autoplay is blocked, play on first user interaction
+                document.addEventListener("click", () => {
+                    audio.play();
+                }, { once: true });
+            });
+        });
+    </script>
+    
+    
+    <div class="image-container" id="imageContainer">
+        <img src="DreaMap4k.png" alt="8K Image" id="image" loading="lazy">
+    </div>
+    
+    <script>
+        const container = document.getElementById("imageContainer");
+        const image = document.getElementById("image");
+        let isPanning = false, startX, startY, scrollLeft, scrollTop;
+        let scale = 1, initialDistance = null;
+        
+        container.addEventListener("mousedown", (e) => {
+            isPanning = true;
+            startX = e.pageX - container.offsetLeft;
+            startY = e.pageY - container.offsetTop;
+            scrollLeft = container.scrollLeft;
+            scrollTop = container.scrollTop;
+            container.style.cursor = "grabbing";
+        });
+        
+        container.addEventListener("mouseup", () => {
+            isPanning = false;
+            container.style.cursor = "grab";
+        });
+        
+        container.addEventListener("mouseleave", () => {
+            isPanning = false;
+            container.style.cursor = "grab";
+        });
+        
+        container.addEventListener("mousemove", (e) => {
+            if (!isPanning) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const y = e.pageY - container.offsetTop;
+            const walkX = (x - startX) * -1;
+            const walkY = (y - startY) * -1;
+            container.scrollLeft = scrollLeft + walkX;
+            container.scrollTop = scrollTop + walkY;
+        });
+        
+        container.addEventListener("wheel", (e) => {
+            e.preventDefault();
+            const scaleAmount = e.deltaY > 0 ? 0.9 : 1.1;
+            scale *= scaleAmount;
+            scale = Math.min(Math.max(0.5, scale), 3);
+            image.style.transform = `scale(${scale})`;
+        });
+        
+        container.addEventListener("touchstart", (e) => {
+            if (e.touches.length === 2) {
+                initialDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            } else {
+                isPanning = true;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                scrollLeft = container.scrollLeft;
+                scrollTop = container.scrollTop;
+            }
+        });
+        
+        container.addEventListener("touchmove", (e) => {
+            if (e.touches.length === 2) {
+                const newDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                if (initialDistance) {
+                    let scaleAmount = newDistance / initialDistance;
+                    scale *= scaleAmount;
+                    scale = Math.min(Math.max(0.5, scale), 3);
+                    image.style.transform = `scale(${scale})`;
+                }
+                initialDistance = newDistance;
+            } else if (isPanning) {
+                const touchX = e.touches[0].clientX;
+                const touchY = e.touches[0].clientY;
+                const moveX = (touchX - startX) * -1;
+                const moveY = (touchY - startY) * -1;
+                container.scrollLeft = scrollLeft + moveX;
+                container.scrollTop = scrollTop + moveY;
+            }
+        });
+        
+        container.addEventListener("touchend", () => {
+            isPanning = false;
+            initialDistance = null;
+        });
+    </script>
+</body>
+</html>
